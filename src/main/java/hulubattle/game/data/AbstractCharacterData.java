@@ -91,12 +91,12 @@ public abstract class AbstractCharacterData implements Data {
     }
 
     /**
-     * @param id
-     * @param name
-     * @param hp
-     * @param def
-     * @param mobility
-     * @param skillList
+     * @param id 角色数据 ID
+     * @param name 角色姓名
+     * @param hp 角色最大生命值
+     * @param def 角色防御力
+     * @param mobility 角色行动力
+     * @param skillList 角色技能列表
      */
     protected AbstractCharacterData(int id, String name, int hp, int def, int mobility, int[] skillList) {
         this.id = id;

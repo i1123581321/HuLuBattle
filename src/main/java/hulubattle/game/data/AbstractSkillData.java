@@ -84,12 +84,12 @@ public abstract class AbstractSkillData implements Data {
     }
 
     /**
-     * @param id
-     * @param name
-     * @param harm
-     * @param range
-     * @param atk
-     * @param atkNum
+     * @param id 技能数据 ID
+     * @param name 技能名称
+     * @param harm 目标是否为敌方
+     * @param range 技能射程
+     * @param atk 技能攻击力
+     * @param atkNum 技能攻击次数
      */
     protected AbstractSkillData(int id, String name, boolean harm, int range, int atk, int atkNum) {
         this.id = id;
