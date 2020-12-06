@@ -2,6 +2,9 @@ package hulubattle.game.model;
 
 import hulubattle.game.data.AbstractCharacterData;
 
+/**
+ * 无定制的角色信息
+ */
 public class SimpleCharacter extends AbstractCharacter {
 
     /**

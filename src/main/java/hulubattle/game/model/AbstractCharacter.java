@@ -33,6 +33,7 @@ public abstract class AbstractCharacter {
      * 根据角色数据初始化
      * @param data 角色数据
      * @param id 角色的 id
+     * @param camp 角色的阵营
      */
     protected AbstractCharacter(AbstractCharacterData data, int id, Camp camp) {
         this.id = id;
@@ -87,8 +88,8 @@ public abstract class AbstractCharacter {
 
     /**
      * 判断角色是否是敌方
-     * @param character
-     * @return
+     * @param character 对方角色
+     * @return 是否为敌方
      */
     public boolean isHarm(AbstractCharacter character) {
         return character.camp != camp;
