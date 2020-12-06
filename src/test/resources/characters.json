@@ -1,0 +1,22 @@
+[
+    {
+        "id": 1,
+        "name": "枪兵",
+        "hp": 100,
+        "def": 20,
+        "mobility": 2,
+        "skillList": [
+            1
+        ]
+    },
+    {
+        "id": 2,
+        "name": "骑兵",
+        "hp": 100,
+        "def": 10,
+        "mobility": 3,
+        "skillList": [
+            2
+        ]
+    }
+]
