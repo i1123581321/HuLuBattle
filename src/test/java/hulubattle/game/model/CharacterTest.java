@@ -1,5 +1,6 @@
 package hulubattle.game.model;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -31,8 +32,10 @@ public class CharacterTest {
     public void testDistance() {
         c1.moveTo(1, 2);
         c2.moveTo(7, 9);
+        int[] expected = new int[] { 7, 9 };
         assertEquals(13, c1.distance(c2));
         assertEquals(c1.distance(c2), c2.distance(c1));
+        assertArrayEquals(expected, c2.getPosition());
     }
 
     @Test
