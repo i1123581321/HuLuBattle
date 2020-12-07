@@ -24,8 +24,9 @@ public class JsonDataSupplier<T extends Data> implements DataSupplier<T> {
 
     /**
      * 字符串构造器，使用 JSON 字符串作为数据源
+     *
      * @param typeClass 具体存储的类型的 Class 对象，继承自 T
-     * @param string JSON 字符串
+     * @param string    JSON 字符串
      */
     public JsonDataSupplier(Class<? extends T> typeClass, String string) {
         this.typeClass = typeClass;
@@ -34,8 +35,9 @@ public class JsonDataSupplier<T extends Data> implements DataSupplier<T> {
 
     /**
      * 文件构造器，使用一个路径作为数据源
+     *
      * @param typeClass 具体存储的类型的 Class 对象，继承自 T
-     * @param path JSON 文件所在的路径
+     * @param path      JSON 文件所在的路径
      * @throws IOException 读文件错时抛出
      */
     public JsonDataSupplier(Class<? extends T> typeClass, Path path) throws IOException {

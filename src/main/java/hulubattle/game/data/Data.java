@@ -6,6 +6,7 @@ package hulubattle.game.data;
 public interface Data {
     /**
      * 获取数据对象的 ID
+     *
      * @return ID
      */
     public int getId();
