@@ -1,18 +1,15 @@
 package hulubattle.game.data;
 
-import java.util.Objects;
-
 /**
  * 技能数据的抽象类，可以实现并重写 get 方法以定制化
  */
 public abstract class AbstractSkillData implements Data {
-    private int id = 0;
-    private String name = "";
-
-    private boolean harm = true;
-    private int range = 0;
-    private int atk = 0;
-    private int atkNum = 0;
+    private final int id;
+    private final String name;
+    private final boolean harm;
+    private final int range;
+    private final int atk;
+    private final int atkNum;
 
     @Override
     public int getId() {
@@ -54,36 +51,8 @@ public abstract class AbstractSkillData implements Data {
         return atkNum;
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see java.lang.Object#hashCode()
-     */
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, name, harm, range, atk, atkNum);
-    }
-
-    /*
-     * (non-Javadoc)
-     *
-     * @see java.lang.Object#equals(java.lang.Object)
-     */
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (!(obj instanceof AbstractSkillData)) {
-            return false;
-        }
-        AbstractSkillData other = (AbstractSkillData) obj;
-        return Objects.equals(other.id, this.id);
-    }
-
     /**
+     * 成员构造器
      * @param id 技能数据 ID
      * @param name 技能名称
      * @param harm 目标是否为敌方
@@ -104,5 +73,8 @@ public abstract class AbstractSkillData implements Data {
      * 无参构造器
      */
     protected AbstractSkillData() {
+        id = range = atk = atkNum = 0;
+        harm = false;
+        name = null;
     }
 }

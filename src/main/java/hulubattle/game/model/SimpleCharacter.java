@@ -15,5 +15,4 @@ public class SimpleCharacter extends AbstractCharacter {
     public SimpleCharacter(AbstractCharacterData data, int id, Camp camp) {
         super(data, id, camp);
     }
-
 }

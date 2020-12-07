@@ -9,12 +9,13 @@ import hulubattle.game.data.AbstractCharacterData;
  */
 public abstract class AbstractCharacter {
     /**
-     * 函数接口，用于处理角色死亡时的操作
+     * 函数接口，用于处理角色生命值变化时的操作
      */
     @FunctionalInterface
-    public interface CharacterDeadHandler {
+    public interface CharacterHurtHandler {
         /**
-         * 角色死亡时（生命值降低到0）会调用该函数
+         * 角色生命值变化时会调用该函数
+         *
          * @param id 角色的 id
          */
         public void handle(int id);
@@ -27,12 +28,13 @@ public abstract class AbstractCharacter {
     private int y = 0;
     private int hp;
     private Camp camp;
-    private Optional<CharacterDeadHandler> handler = Optional.empty();
+    private Optional<CharacterHurtHandler> handler = Optional.empty();
 
     /**
      * 根据角色数据初始化
+     *
      * @param data 角色数据
-     * @param id 角色的 id
+     * @param id   角色的 id
      * @param camp 角色的阵营
      */
     protected AbstractCharacter(AbstractCharacterData data, int id, Camp camp) {
@@ -50,14 +52,29 @@ public abstract class AbstractCharacter {
     }
 
     /**
+     * @return the hp
+     */
+    public int getHp() {
+        return hp;
+    }
+
+    /**
+     * @return the position
+     */
+    public int[] getPosition() {
+        return new int[] { x, y };
+    }
+
+    /**
      * @param handler the handler to set
      */
-    public void setHandler(CharacterDeadHandler handler) {
+    public void setHandler(CharacterHurtHandler handler) {
         this.handler = Optional.of(handler);
     }
 
     /**
      * 返回两个角色之间的距离
+     *
      * @param character 另一个角色
      * @return 曼哈顿距离
      */
@@ -67,6 +84,7 @@ public abstract class AbstractCharacter {
 
     /**
      * 将角色移动到指定位置
+     *
      * @param x 横坐标
      * @param y 纵坐标
      */
@@ -77,17 +95,17 @@ public abstract class AbstractCharacter {
 
     /**
      * 角色受到伤害
+     *
      * @param damage 伤害值
      */
     public void hurt(int damage) {
         hp -= damage;
-        if (hp <= 0) {
-            handler.ifPresent(h -> h.handle(this.id));
-        }
+        handler.ifPresent(h -> h.handle(this.id));
     }
 
     /**
      * 判断角色是否是敌方
+     *
      * @param character 对方角色
      * @return 是否为敌方
      */

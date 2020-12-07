@@ -3,6 +3,7 @@ package hulubattle.game.model;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import org.junit.BeforeClass;
@@ -12,7 +13,7 @@ import hulubattle.game.data.AbstractCharacterData;
 import hulubattle.game.data.DataSupplier;
 import hulubattle.game.data.JsonDataSupplier;
 import hulubattle.game.data.SimpleCharacterData;
-import hulubattle.game.model.AbstractCharacter.CharacterDeadHandler;
+import hulubattle.game.model.AbstractCharacter.CharacterHurtHandler;
 
 public class CharacterTest {
     private static String characterJson = "[{\"id\":1,\"name\":\"枪兵\",\"hp\":100,\"def\":20,\"mobility\":2,\"skillList\":[1]},{\"id\":2,\"name\":\"骑兵\",\"hp\":100,\"def\":10,\"mobility\":3,\"skillList\":[2]}]";
@@ -41,9 +42,11 @@ public class CharacterTest {
 
     @Test
     public void testHurt() {
-        CharacterDeadHandler handler = mock(CharacterDeadHandler.class);
+        CharacterHurtHandler handler = mock(CharacterHurtHandler.class);
         c1.setHandler(handler);
-        c1.hurt(120);
-        verify(handler).handle(1);
+        c1.hurt(40);
+        c1.hurt(-20);
+        verify(handler, times(2)).handle(1);
+        assertEquals(80, c1.getHp());
     }
 }

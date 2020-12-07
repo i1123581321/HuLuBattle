@@ -5,6 +5,6 @@ package hulubattle.game.data;
  */
 public class SimpleSkillData extends AbstractSkillData {
     public SimpleSkillData() {
-        // no-args constructor
+        super();
     }
 }

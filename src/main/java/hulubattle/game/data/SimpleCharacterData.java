@@ -5,6 +5,6 @@ package hulubattle.game.data;
  */
 public class SimpleCharacterData extends AbstractCharacterData{
     public SimpleCharacterData() {
-        // no-args constructor
+        super();
     }
 }
