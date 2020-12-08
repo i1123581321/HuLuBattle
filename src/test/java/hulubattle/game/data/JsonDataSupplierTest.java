@@ -33,7 +33,7 @@ public class JsonDataSupplierTest {
 
     @Test(expected = Test.None.class)
     public void testLoadFromFileNotThrows() throws IOException, URISyntaxException {
-        Path characterPath = Paths.get(getClass().getClassLoader().getResource("characters.json").toURI());
+        Path characterPath = Paths.get(getClass().getClassLoader().getResource("config/characters.json").toURI());
         characterDataSupplier = new JsonDataSupplier<>(SimpleCharacterData.class, characterPath);
     }
 

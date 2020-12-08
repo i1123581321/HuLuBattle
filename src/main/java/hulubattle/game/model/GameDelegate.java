@@ -3,9 +3,11 @@ package hulubattle.game.model;
 import java.util.List;
 
 public interface GameDelegate {
-    public void gameDidStart(List<CombatLog> setupA, List<CombatLog> setupB);
+    public void gameDidStart(CombatLog msgA, CombatLog msgB);
 
-    public void gameDidActSucceed(List<CombatLog> logs);
+    public void gameDidSetUp(List<CombatLog> setup);
+
+    public void gameDidActSucceed(CombatLog log);
 
     public void gameDidActFail(CombatLog error);
 

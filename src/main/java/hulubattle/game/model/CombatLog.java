@@ -1,16 +1,16 @@
 package hulubattle.game.model;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+
 /**
  * 战斗日志
  */
 public final class CombatLog {
     public final String type;
-    public final int src;
-    public final int dest;
-    public final int x;
-    public final int y;
-    public final int skill;
     public final String msg;
+    private Map<String, Integer> payload = new HashMap<>();
 
     /**
      * 获取 SET 类型的日志，将 src 角色设置在 x y 处，生命值设置为最大生命值
@@ -20,8 +20,14 @@ public final class CombatLog {
      * @param y   纵坐标
      * @return 日志对象
      */
-    public static CombatLog set(int src, int x, int y) {
-        return new CombatLog(LogType.SET.name(), src, -1, x, y, -1, "");
+    public static CombatLog set(int src, int data, int x, int y, int camp) {
+        CombatLog log = new CombatLog(LogType.SET.name(), "");
+        log.payload.put("src", src);
+        log.payload.put("data", data);
+        log.payload.put("x", x);
+        log.payload.put("y", y);
+        log.payload.put("camp", camp);
+        return log;
     }
 
     /**
@@ -33,7 +39,11 @@ public final class CombatLog {
      * @return 日志对象
      */
     public static CombatLog move(int src, int x, int y) {
-        return new CombatLog(LogType.MOVE.name(), src, -1, x, y, -1, "");
+        CombatLog log = new CombatLog(LogType.MOVE.name(), "");
+        log.payload.put("src", src);
+        log.payload.put("x", x);
+        log.payload.put("y", y);
+        return log;
     }
 
     /**
@@ -44,8 +54,27 @@ public final class CombatLog {
      * @param skill 技能 ID
      * @return 日志对象
      */
-    public static CombatLog cast(int src, int dest, int skill) {
-        return new CombatLog(LogType.CAST.name(), src, dest, -1, -1, skill, "");
+    public static CombatLog cast(int src, int dest, int skill, int hp) {
+        CombatLog log = new CombatLog(LogType.CAST.name(), "");
+        log.payload.put("src", src);
+        log.payload.put("dest", dest);
+        log.payload.put("skill", skill);
+        log.payload.put("hp", hp);
+        return log;
+    }
+
+    /**
+     * 获取 HURT 类型的日志，src 角色受到伤害，生命值更新为 hp
+     *
+     * @param src 角色 ID
+     * @param hp  更新后的生命值
+     * @return 日志对象
+     */
+    public static CombatLog hurt(int src, int hp) {
+        CombatLog log = new CombatLog(LogType.HURT.name(), "");
+        log.payload.put("src", src);
+        log.payload.put("hp", hp);
+        return log;
     }
 
     /**
@@ -55,7 +84,19 @@ public final class CombatLog {
      * @return 日志对象
      */
     public static CombatLog destroy(int src) {
-        return new CombatLog(LogType.DESTROY.name(), src, -1, -1, -1, -1, "");
+        CombatLog log = new CombatLog(LogType.DESTROY.name(), "");
+        log.payload.put("src", src);
+        return log;
+    }
+
+    /**
+     * 获取 INFO 类型的日志
+     *
+     * @param msg 通知信息
+     * @return 日志对象
+     */
+    public static CombatLog info(String msg) {
+        return new CombatLog(LogType.INFO.name(), msg);
     }
 
     /**
@@ -65,16 +106,52 @@ public final class CombatLog {
      * @return 日志对象
      */
     public static CombatLog error(String msg) {
-        return new CombatLog(LogType.ERROR.name(), -1, -1, -1, -1, -1, msg);
+        return new CombatLog(LogType.ERROR.name(), msg);
     }
 
-    private CombatLog(String type, int src, int dest, int x, int y, int skill, String msg) {
+    /**
+     * @param type
+     * @param msg
+     */
+    private CombatLog(String type, String msg) {
         this.type = type;
-        this.src = src;
-        this.dest = dest;
-        this.x = x;
-        this.y = y;
-        this.skill = skill;
         this.msg = msg;
+    }
+
+    /**
+     * @see java.util.Map#get(java.lang.Object)
+     */
+    public int get(String key) {
+        return payload.get(key);
+    }
+
+    /*
+     * (non-Javadoc)
+     *
+     * @see java.lang.Object#hashCode()
+     */
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(type, msg, payload);
+    }
+
+    /*
+     * (non-Javadoc)
+     *
+     * @see java.lang.Object#equals(java.lang.Object)
+     */
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof CombatLog)) {
+            return false;
+        }
+        CombatLog other = (CombatLog) obj;
+        return Objects.equals(type, other.type) && Objects.equals(msg, other.msg)
+                && Objects.equals(payload, other.payload);
     }
 }

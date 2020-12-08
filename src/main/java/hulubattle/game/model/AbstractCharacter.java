@@ -1,6 +1,5 @@
 package hulubattle.game.model;
 
-import java.util.Objects;
 import java.util.Optional;
 
 import hulubattle.game.data.AbstractCharacterData;
@@ -15,34 +14,69 @@ public abstract class AbstractCharacter {
     @FunctionalInterface
     public interface CharacterHurtHandler {
         /**
-         * 角色生命值变化时会调用该函数
+         * 角色生命变化时会调用该函数
          *
          * @param id 角色的 id
+         * @param hp 角色受伤后的 hp
          */
-        public void handle(int id);
+        public void handle(int id, int hp);
+    }
+
+    /**
+     * 函数接口，用于处理角色移动时的操作
+     */
+    @FunctionalInterface
+    public interface CharacterMoveHandler {
+        /**
+         * 角色移动后会调用该函数
+         *
+         * @param id 角色 id
+         * @param x  移动后的横坐标
+         * @param y  移动后的纵坐标
+         */
+        public void handle(int id, int x, int y);
     }
 
     private final int id;
     private final int dataId;
+    private final int maxHp;
 
     private int x = 0;
     private int y = 0;
     private int hp;
-    private Camp camp;
-    private Optional<CharacterHurtHandler> handler = Optional.empty();
+    private int camp;
+    private Optional<CharacterHurtHandler> hurtHandler = Optional.empty();
+    private Optional<CharacterMoveHandler> moveHandler = Optional.empty();
 
     /**
-     * 根据角色数据初始化
-     *
+     * 静态工厂方法，屏蔽获取实例背后的实现
+     * @param id 角色 ID
      * @param data 角色数据
-     * @param id   角色的 id
-     * @param camp 角色的阵营
+     * @param x 位置横坐标
+     * @param y 位置纵坐标
+     * @param camp 阵营
+     * @return 生成的角色实例
      */
-    protected AbstractCharacter(AbstractCharacterData data, int id, Camp camp) {
+    public static AbstractCharacter getDefault(int id, AbstractCharacterData data, int x, int y, int camp) {
+        int dataId = data.getId();
+        int hp = data.getHp();
+        AbstractCharacter character = new SimpleCharacter(id, dataId, hp, camp);
+        character.moveTo(x, y);
+        return character;
+    }
+
+    protected AbstractCharacter(int id, int data, int hp, int camp) {
         this.id = id;
-        this.dataId = data.getId();
-        this.hp = data.getHp();
+        this.maxHp = this.hp = hp;
+        this.dataId = data;
         this.camp = camp;
+    }
+
+    /**
+     * @return the id
+     */
+    public int getId() {
+        return id;
     }
 
     /**
@@ -53,24 +87,24 @@ public abstract class AbstractCharacter {
     }
 
     /**
-     * @return the hp
+     * @return the camp
      */
-    public int getHp() {
-        return hp;
+    public int getCamp() {
+        return camp;
     }
 
     /**
-     * @return the position
+     * @param hurtHandler the hurtHandler to set
      */
-    public int[] getPosition() {
-        return new int[] { x, y };
+    public void setHurtHandler(CharacterHurtHandler hurtHandler) {
+        this.hurtHandler = Optional.ofNullable(hurtHandler);
     }
 
     /**
-     * @param handler the handler to set
+     * @param moveHandler the moveHandler to set
      */
-    public void setHandler(CharacterHurtHandler handler) {
-        this.handler = Optional.of(handler);
+    public void setMoveHandler(CharacterMoveHandler moveHandler) {
+        this.moveHandler = Optional.ofNullable(moveHandler);
     }
 
     /**
@@ -92,6 +126,7 @@ public abstract class AbstractCharacter {
     public void moveTo(int x, int y) {
         this.x = x;
         this.y = y;
+        moveHandler.ifPresent(h -> h.handle(id, x, y));
     }
 
     /**
@@ -101,7 +136,12 @@ public abstract class AbstractCharacter {
      */
     public void hurt(int damage) {
         hp -= damage;
-        handler.ifPresent(h -> h.handle(this.id));
+        if (hp >= maxHp) {
+            hp = maxHp;
+        } else if (hp < 0) {
+            hp = 0;
+        }
+        hurtHandler.ifPresent(h -> h.handle(id, hp));
     }
 
     /**
