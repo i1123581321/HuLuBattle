@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,21 +38,44 @@ public class Game {
     public static final int SKILL_NUM = 4;
     public static final int CHARACTER_NUM = 4;
     public static final int MAX_CHARACTER = 10;
+    public static final int A = 0;
+    public static final int B = 1;
+
+    private static class GameException extends Exception {
+        private static final long serialVersionUID = 1L;
+
+        /**
+         * @param message 错误信息
+         */
+        public GameException(String message) {
+            super(message);
+        }
+    }
 
     private static Gson gson = new Gson();
+    private static Random random = new Random();
+
+    private DataSupplier<AbstractCharacterData> charactersData;
+    private DataSupplier<AbstractSkillData> skillsData;
     private Map<Integer, AbstractCharacter> characters = new HashMap<>();
-    private DataSupplier<AbstractCharacterData> characterData;
-    private DataSupplier<AbstractSkillData> skillData;
     private BiMap<Integer, Integer> map = HashBiMap.create();
-    private GameState state = GameState.MOVE;
     private Optional<GameDelegate> delegate = Optional.empty();
-    private Random random = new Random();
+
+    private GameState state = GameState.END;
+    private int currentCamp = A;
+    private int campANum = 0;
+    private int campBNum = 0;
+
     private CharacterMoveHandler moveHandler = (src, x, y) -> {
         map.forcePut(src, x * MAP_SIZE + y);
         delegate.ifPresent(d -> d.gameDidActSucceed(CombatLog.move(src, x, y)));
     };
-    private CharacterHurtHandler hurtHandler = (src, hp) -> delegate
-            .ifPresent(d -> d.gameDidActSucceed(CombatLog.hurt(src, hp)));
+    private CharacterHurtHandler hurtHandler = (src, hp) -> {
+        delegate.ifPresent(d -> d.gameDidActSucceed(CombatLog.hurt(src, hp)));
+        if (hp == 0) {
+            removeCharacter(src);
+        }
+    };
 
     /**
      * 计算指定技能作用在指定目标上得到的伤害
@@ -77,8 +101,8 @@ public class Game {
     public Game() throws URISyntaxException, IOException {
         Path characterPath = Paths.get(getClass().getClassLoader().getResource("config/characters.json").toURI());
         Path skillPath = Paths.get(getClass().getClassLoader().getResource("config/skills.json").toURI());
-        characterData = new JsonDataSupplier<>(SimpleCharacterData.class, characterPath);
-        skillData = new JsonDataSupplier<>(SimpleSkillData.class, skillPath);
+        charactersData = new JsonDataSupplier<>(SimpleCharacterData.class, characterPath);
+        skillsData = new JsonDataSupplier<>(SimpleSkillData.class, skillPath);
     }
 
     /**
@@ -94,6 +118,9 @@ public class Game {
      * 随机布置战场
      */
     public void setUpRandomly() {
+        if (state != GameState.END) {
+            return;
+        }
         List<CombatLog> logList = new ArrayList<>();
         IntStream.range(0, MAX_CHARACTER).forEach(i -> {
 
@@ -106,10 +133,10 @@ public class Game {
             int y = position % MAP_SIZE;
 
             // 确定阵营
-            int camp = i / (MAX_CHARACTER / 2);
+            int camp = i < (MAX_CHARACTER / 2) ? A : B;
 
             // 随机获取数据
-            AbstractCharacterData data = characterData.get(random.nextInt(CHARACTER_NUM)).get();
+            AbstractCharacterData data = charactersData.get(random.nextInt(CHARACTER_NUM)).get();
 
             // 初始化角色
             AbstractCharacter character = AbstractCharacter.getDefault(i, data, x, y, camp);
@@ -118,17 +145,25 @@ public class Game {
 
             map.put(i, position);
             characters.put(i, character);
+            if (character.getCamp() == A) {
+                campANum += 1;
+            } else {
+                campBNum += 1;
+            }
 
             logList.add(CombatLog.set(i, data.getId(), x, y, camp));
         });
         delegate.ifPresent(d -> d.gameDidSetUp(logList));
+        state = GameState.MOVE;
     }
 
     /**
      * 根据 JSON 配置文件设置起始战场，如果读取错误则随机设置
      */
     public void setUp() {
-
+        if (state != GameState.END) {
+            return;
+        }
         Optional<String> str = Optional.empty();
         try {
             Path path = Paths.get(getClass().getClassLoader().getResource("config/init.json").toURI());
@@ -148,7 +183,7 @@ public class Game {
                 Map<String, Integer> config = init.get(i);
 
                 // 获取数据
-                AbstractCharacterData data = characterData.get(config.get("id")).get();
+                AbstractCharacterData data = charactersData.get(config.get("id")).get();
                 int x = config.get("x");
                 int y = config.get("y");
                 int camp = config.get("camp");
@@ -160,10 +195,146 @@ public class Game {
 
                 map.put(i, x * MAP_SIZE + y);
                 characters.put(i, character);
+                if (character.getCamp() == A) {
+                    campANum += 1;
+                } else {
+                    campBNum += 1;
+                }
 
                 logList.add(CombatLog.set(i, data.getId(), x, y, camp));
             });
             delegate.ifPresent(d -> d.gameDidSetUp(logList));
         });
+        state = GameState.MOVE;
+    }
+
+    public void checkLogType(CombatLog log) throws GameException {
+        if (state == GameState.END) {
+            return;
+        }
+        LogType type = LogType.valueOf(log.type);
+        // 检查日志类型
+        switch (state) {
+            case MOVE:
+                if (type == LogType.CAST) {
+                    state = GameState.CAST;
+                } else if (type != LogType.MOVE) {
+                    throw new GameException("日志类型非法");
+                }
+                break;
+            case CAST:
+                if (type != LogType.CAST) {
+                    throw new GameException("日志类型非法");
+                }
+                break;
+            default:
+                // do nothing
+                break;
+        }
+    }
+
+    public void move(AbstractCharacter src, AbstractCharacterData srcData, int x, int y) throws GameException {
+        // 检查目标地点是否合法
+        if (x < 0 || y < 0 || x >= MAP_SIZE || y >= MAP_SIZE) {
+            throw new GameException("移动目标非法");
+        }
+        // 检查目标地点是否已经有角色
+        if (map.containsValue(x * MAP_SIZE + y)) {
+            throw new GameException("移动目标已有角色");
+        }
+        int mobility = srcData.getMobility();
+        // 检查移动力
+        if (src.distance(x, y) > mobility) {
+            throw new GameException("移动力不足");
+        }
+        src.moveTo(x, y);
+        state = GameState.CAST;
+    }
+
+    public void cast(AbstractCharacter src, AbstractCharacterData srcData, AbstractCharacter dest,
+            AbstractCharacterData destData, AbstractSkillData skill) throws GameException {
+        // 检查该角色是否能释放该技能
+        if (!Arrays.stream(srcData.getSkillList()).anyMatch(a -> a == skill.getId())) {
+            throw new GameException("技能不可用");
+        }
+        // 检查技能目标是否合法
+        if ((src.isHarm(dest) && !skill.isHarm()) || (!src.isHarm(dest) && skill.isHarm())) {
+            throw new GameException("技能目标非法");
+        }
+        // 检查是否进入射程
+        if (src.distance(dest) > skill.getRange()) {
+            throw new GameException("技能超出射程");
+        }
+        delegate.ifPresent(d -> d.gameDidActSucceed(CombatLog.cast(src.getId(), dest.getId(), skill.getId())));
+        int damage = calcDamage(skill, destData);
+        dest.hurt(damage);
+        if (state == GameState.CAST) {
+            currentCamp = currentCamp == A ? B : A;
+            state = GameState.MOVE;
+        }
+    }
+
+    public void act(CombatLog log) throws GameException {
+        int src = log.get("src");
+        // 检查角色是否存在
+        AbstractCharacter srcCharacter = Optional.ofNullable(characters.get(src))
+                .orElseThrow(() -> new GameException("角色不存在"));
+        // 检查角色数据是否存在
+        AbstractCharacterData srcData = charactersData.get(srcCharacter.getDataId())
+                .orElseThrow(() -> new GameException("角色数据不存在"));
+        // 检查是否可操控
+        if (srcCharacter.getCamp() != currentCamp) {
+            throw new GameException("角色不可操控");
+        }
+
+        switch (state) {
+            case MOVE:
+                int x = log.get("x");
+                int y = log.get("y");
+                move(srcCharacter, srcData, x, y);
+                break;
+            case CAST:
+                int dest = log.get("dest");
+                int skill = log.get("skill");
+
+                // 检查角色是否存在
+                AbstractCharacter destCharacter = Optional.ofNullable(characters.get(dest))
+                        .orElseThrow(() -> new GameException("角色不存在"));
+                // 检查角色数据是否存在
+                AbstractCharacterData destData = charactersData.get(destCharacter.getDataId())
+                        .orElseThrow(() -> new GameException("角色数据不存在"));
+                // 检查技能数据是否存在
+                AbstractSkillData skillData = skillsData.get(skill).orElseThrow(() -> new GameException("技能数据不存在"));
+                cast(srcCharacter, srcData, destCharacter, destData, skillData);
+                break;
+            default:
+                // do nothing
+                break;
+        }
+
+    }
+
+    private void removeCharacter(int id) {
+        AbstractCharacter character = characters.get(id);
+        if (character.getCamp() == A) {
+            campANum -= 1;
+        } else {
+            campBNum -= 1;
+        }
+        characters.remove(id);
+        map.remove(id);
+        delegate.ifPresent(d -> d.gameDidActSucceed(CombatLog.destroy(id)));
+        if (campANum == 0 || campBNum == 0) {
+            CombatLog win = CombatLog.info("游戏胜利");
+            CombatLog lose = CombatLog.info("游戏失败");
+            if (campBNum == 0) {
+                delegate.ifPresent(d -> d.gameDidEnd(win, lose));
+            } else {
+                delegate.ifPresent(d -> d.gameDidEnd(lose, win));
+            }
+            state = GameState.END;
+            map.clear();
+            characters.clear();
+        }
     }
 }

@@ -50,10 +50,11 @@ public abstract class AbstractCharacter {
 
     /**
      * 静态工厂方法，屏蔽获取实例背后的实现
-     * @param id 角色 ID
+     *
+     * @param id   角色 ID
      * @param data 角色数据
-     * @param x 位置横坐标
-     * @param y 位置纵坐标
+     * @param x    位置横坐标
+     * @param y    位置纵坐标
      * @param camp 阵营
      * @return 生成的角色实例
      */
@@ -115,6 +116,17 @@ public abstract class AbstractCharacter {
      */
     public int distance(AbstractCharacter character) {
         return Math.abs(character.x - x) + Math.abs(character.y - y);
+    }
+
+    /**
+     * 返回角色和目标地点的距离
+     *
+     * @param x 横坐标
+     * @param y 纵坐标
+     * @return 曼哈顿距离
+     */
+    public int distance(int x, int y) {
+        return Math.abs(this.x - x) + Math.abs(this.y - y);
     }
 
     /**

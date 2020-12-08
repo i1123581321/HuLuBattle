@@ -54,12 +54,11 @@ public final class CombatLog {
      * @param skill 技能 ID
      * @return 日志对象
      */
-    public static CombatLog cast(int src, int dest, int skill, int hp) {
+    public static CombatLog cast(int src, int dest, int skill) {
         CombatLog log = new CombatLog(LogType.CAST.name(), "");
         log.payload.put("src", src);
         log.payload.put("dest", dest);
         log.payload.put("skill", skill);
-        log.payload.put("hp", hp);
         return log;
     }
 
@@ -86,6 +85,15 @@ public final class CombatLog {
     public static CombatLog destroy(int src) {
         CombatLog log = new CombatLog(LogType.DESTROY.name(), "");
         log.payload.put("src", src);
+        return log;
+    }
+
+    /**
+     * 获取 SKIP 类型的日志，跳过当前回合
+     * @return 日志对象
+     */
+    public static CombatLog skip() {
+        CombatLog log = new CombatLog(LogType.SKIP.name(), "");
         return log;
     }
 
