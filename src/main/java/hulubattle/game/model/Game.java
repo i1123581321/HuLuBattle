@@ -140,8 +140,8 @@ public class Game {
         str.ifPresent(s -> {
             List<CombatLog> logList = new ArrayList<>();
 
-            Type mapType = TypeToken.getParameterized(HashMap.class, String.class, Integer.class).getType();
-            Type type = TypeToken.getParameterized(ArrayList.class, mapType).getType();
+            Type type = new TypeToken<List<Map<String, Integer>>>() {
+            }.getType();
             List<Map<String, Integer>> init = gson.fromJson(s, type);
 
             IntStream.range(0, init.size()).forEach(i -> {

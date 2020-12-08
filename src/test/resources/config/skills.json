@@ -1,6 +1,6 @@
 [
     {
-        "id": 1,
+        "id": 0,
         "name": "劈砍",
         "harm": true,
         "range": 2,
@@ -8,7 +8,7 @@
         "atkNum": 1
     },
     {
-        "id": 2,
+        "id": 1,
         "name": "冲锋",
         "harm": true,
         "range": 1,
