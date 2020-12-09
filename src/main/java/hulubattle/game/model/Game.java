@@ -94,7 +94,7 @@ public class Game {
      * 无参构造器，直接读取配置好的 JSON 文件，如果文件不存在或读取错误则抛出异常
      *
      * @throws URISyntaxException 路径错误
-     * @throws IOException 读取文件错误
+     * @throws IOException        读取文件错误
      */
     public Game() throws URISyntaxException, IOException {
         Path characterPath = Paths.get(getClass().getClassLoader().getResource("config/characters.json").toURI());

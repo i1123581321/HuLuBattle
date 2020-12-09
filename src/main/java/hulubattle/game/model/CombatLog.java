@@ -15,10 +15,10 @@ public final class CombatLog {
     /**
      * 获取 SET 类型的日志，将 src 角色设置在 x y 处，生命值设置为最大生命值
      *
-     * @param src 角色 ID
+     * @param src  角色 ID
      * @param data 角色数据 ID
-     * @param x   横坐标
-     * @param y   纵坐标
+     * @param x    横坐标
+     * @param y    纵坐标
      * @param camp 角色阵营
      * @return 日志对象
      */
