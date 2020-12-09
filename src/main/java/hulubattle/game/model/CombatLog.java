@@ -16,8 +16,10 @@ public final class CombatLog {
      * 获取 SET 类型的日志，将 src 角色设置在 x y 处，生命值设置为最大生命值
      *
      * @param src 角色 ID
+     * @param data 角色数据 ID
      * @param x   横坐标
      * @param y   纵坐标
+     * @param camp 角色阵营
      * @return 日志对象
      */
     public static CombatLog set(int src, int data, int x, int y, int camp) {
@@ -90,11 +92,11 @@ public final class CombatLog {
 
     /**
      * 获取 SKIP 类型的日志，跳过当前回合
+     *
      * @return 日志对象
      */
     public static CombatLog skip() {
-        CombatLog log = new CombatLog(LogType.SKIP.name(), "");
-        return log;
+        return new CombatLog(LogType.SKIP.name(), "");
     }
 
     /**
@@ -127,6 +129,8 @@ public final class CombatLog {
     }
 
     /**
+     * @param key 关键字
+     * @return payload 中的值
      * @see java.util.Map#get(java.lang.Object)
      */
     public int get(String key) {

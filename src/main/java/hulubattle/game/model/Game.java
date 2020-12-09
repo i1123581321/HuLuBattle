@@ -1,7 +1,6 @@
 package hulubattle.game.model;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -13,7 +12,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Random;
 import java.util.stream.IntStream;
 
 import com.google.common.collect.BiMap;
@@ -53,10 +51,10 @@ public class Game {
     }
 
     private static Gson gson = new Gson();
-    private static Random random = new Random();
 
     private DataSupplier<AbstractCharacterData> charactersData;
     private DataSupplier<AbstractSkillData> skillsData;
+    private List<Map<String, Integer>> initData;
     private Map<Integer, AbstractCharacter> characters = new HashMap<>();
     private BiMap<Integer, Integer> map = HashBiMap.create();
     private Optional<GameDelegate> delegate = Optional.empty();
@@ -86,23 +84,27 @@ public class Game {
      */
     public static int calcDamage(AbstractSkillData skill, AbstractCharacterData target) {
         if (skill.isHarm()) {
-            return (skill.getAtk() - target.getDef()) * skill.getAtkNum() * -1;
+            return (skill.getAtk() - target.getDef()) * skill.getAtkNum();
         } else {
-            return skill.getAtk() * skill.getAtkNum();
+            return skill.getAtk() * skill.getAtkNum() * -1;
         }
     }
 
     /**
      * 无参构造器，直接读取配置好的 JSON 文件，如果文件不存在或读取错误则抛出异常
      *
-     * @throws URISyntaxException
-     * @throws IOException
+     * @throws URISyntaxException 路径错误
+     * @throws IOException 读取文件错误
      */
     public Game() throws URISyntaxException, IOException {
         Path characterPath = Paths.get(getClass().getClassLoader().getResource("config/characters.json").toURI());
         Path skillPath = Paths.get(getClass().getClassLoader().getResource("config/skills.json").toURI());
+        Path initPath = Paths.get(getClass().getClassLoader().getResource("config/init.json").toURI());
         charactersData = new JsonDataSupplier<>(SimpleCharacterData.class, characterPath);
         skillsData = new JsonDataSupplier<>(SimpleSkillData.class, skillPath);
+        initData = gson.fromJson(new String(Files.readAllBytes(initPath), StandardCharsets.UTF_8),
+                new TypeToken<List<Map<String, Integer>>>() {
+                }.getType());
     }
 
     /**
@@ -115,35 +117,36 @@ public class Game {
     }
 
     /**
-     * 随机布置战场
+     * 根据 JSON 配置文件设置起始战场
      */
-    public void setUpRandomly() {
+    public void setUp() {
         if (state != GameState.END) {
             return;
         }
+
+        map.clear();
+        characters.clear();
+        campANum = 0;
+        campBNum = 0;
+        currentCamp = A;
+
         List<CombatLog> logList = new ArrayList<>();
-        IntStream.range(0, MAX_CHARACTER).forEach(i -> {
 
-            // 随机生成不重复的位置
-            int position = random.nextInt(MAP_SIZE * MAP_SIZE);
-            while (map.containsValue(position)) {
-                position = random.nextInt(MAP_SIZE * MAP_SIZE);
-            }
-            int x = position / MAP_SIZE;
-            int y = position % MAP_SIZE;
+        IntStream.range(0, initData.size()).forEach(i -> {
+            Map<String, Integer> config = initData.get(i);
 
-            // 确定阵营
-            int camp = i < (MAX_CHARACTER / 2) ? A : B;
-
-            // 随机获取数据
-            AbstractCharacterData data = charactersData.get(random.nextInt(CHARACTER_NUM)).get();
+            // 获取数据
+            AbstractCharacterData data = charactersData.get(config.get("id")).get();
+            int x = config.get("x");
+            int y = config.get("y");
+            int camp = config.get("camp");
 
             // 初始化角色
             AbstractCharacter character = AbstractCharacter.getDefault(i, data, x, y, camp);
             character.setMoveHandler(moveHandler);
             character.setHurtHandler(hurtHandler);
 
-            map.put(i, position);
+            map.put(i, x * MAP_SIZE + y);
             characters.put(i, character);
             if (character.getCamp() == A) {
                 campANum += 1;
@@ -153,128 +156,33 @@ public class Game {
 
             logList.add(CombatLog.set(i, data.getId(), x, y, camp));
         });
+        delegate.ifPresent(d -> d.gameDidStart(CombatLog.info("A"), CombatLog.info("B")));
         delegate.ifPresent(d -> d.gameDidSetUp(logList));
         state = GameState.MOVE;
+
     }
 
-    /**
-     * 根据 JSON 配置文件设置起始战场，如果读取错误则随机设置
-     */
-    public void setUp() {
-        if (state != GameState.END) {
-            return;
-        }
-        Optional<String> str = Optional.empty();
-        try {
-            Path path = Paths.get(getClass().getClassLoader().getResource("config/init.json").toURI());
-            str = Optional.ofNullable(new String(Files.readAllBytes(path), StandardCharsets.UTF_8));
-        } catch (URISyntaxException | IOException e) {
-            setUpRandomly();
-        }
-
-        str.ifPresent(s -> {
-            List<CombatLog> logList = new ArrayList<>();
-
-            Type type = new TypeToken<List<Map<String, Integer>>>() {
-            }.getType();
-            List<Map<String, Integer>> init = gson.fromJson(s, type);
-
-            IntStream.range(0, init.size()).forEach(i -> {
-                Map<String, Integer> config = init.get(i);
-
-                // 获取数据
-                AbstractCharacterData data = charactersData.get(config.get("id")).get();
-                int x = config.get("x");
-                int y = config.get("y");
-                int camp = config.get("camp");
-
-                // 初始化角色
-                AbstractCharacter character = AbstractCharacter.getDefault(i, data, x, y, camp);
-                character.setMoveHandler(moveHandler);
-                character.setHurtHandler(hurtHandler);
-
-                map.put(i, x * MAP_SIZE + y);
-                characters.put(i, character);
-                if (character.getCamp() == A) {
-                    campANum += 1;
-                } else {
-                    campBNum += 1;
-                }
-
-                logList.add(CombatLog.set(i, data.getId(), x, y, camp));
-            });
-            delegate.ifPresent(d -> d.gameDidSetUp(logList));
-        });
-        state = GameState.MOVE;
-    }
-
-    public void checkLogType(CombatLog log) throws GameException {
+    public void act(CombatLog log) {
         if (state == GameState.END) {
             return;
         }
         LogType type = LogType.valueOf(log.type);
-        // 检查日志类型
-        switch (state) {
-            case MOVE:
-                if (type == LogType.CAST) {
-                    state = GameState.CAST;
-                } else if (type != LogType.MOVE) {
-                    throw new GameException("日志类型非法");
-                }
-                break;
-            case CAST:
-                if (type != LogType.CAST) {
-                    throw new GameException("日志类型非法");
-                }
-                break;
-            default:
-                // do nothing
-                break;
-        }
-    }
-
-    public void move(AbstractCharacter src, AbstractCharacterData srcData, int x, int y) throws GameException {
-        // 检查目标地点是否合法
-        if (x < 0 || y < 0 || x >= MAP_SIZE || y >= MAP_SIZE) {
-            throw new GameException("移动目标非法");
-        }
-        // 检查目标地点是否已经有角色
-        if (map.containsValue(x * MAP_SIZE + y)) {
-            throw new GameException("移动目标已有角色");
-        }
-        int mobility = srcData.getMobility();
-        // 检查移动力
-        if (src.distance(x, y) > mobility) {
-            throw new GameException("移动力不足");
-        }
-        src.moveTo(x, y);
-        state = GameState.CAST;
-    }
-
-    public void cast(AbstractCharacter src, AbstractCharacterData srcData, AbstractCharacter dest,
-            AbstractCharacterData destData, AbstractSkillData skill) throws GameException {
-        // 检查该角色是否能释放该技能
-        if (!Arrays.stream(srcData.getSkillList()).anyMatch(a -> a == skill.getId())) {
-            throw new GameException("技能不可用");
-        }
-        // 检查技能目标是否合法
-        if ((src.isHarm(dest) && !skill.isHarm()) || (!src.isHarm(dest) && skill.isHarm())) {
-            throw new GameException("技能目标非法");
-        }
-        // 检查是否进入射程
-        if (src.distance(dest) > skill.getRange()) {
-            throw new GameException("技能超出射程");
-        }
-        delegate.ifPresent(d -> d.gameDidActSucceed(CombatLog.cast(src.getId(), dest.getId(), skill.getId())));
-        int damage = calcDamage(skill, destData);
-        dest.hurt(damage);
-        if (state == GameState.CAST) {
+        if (type == LogType.SKIP) {
             currentCamp = currentCamp == A ? B : A;
             state = GameState.MOVE;
+            delegate.ifPresent(d -> d.gameDidActSucceed(CombatLog.skip()));
+            return;
+        }
+        try {
+            tryAct(log);
+        } catch (GameException e) {
+            delegate.ifPresent(d -> d.gameDidActFail(CombatLog.error(e.getMessage())));
         }
     }
 
-    public void act(CombatLog log) throws GameException {
+    private void tryAct(CombatLog log) throws GameException {
+
+        checkLogType(log);
         int src = log.get("src");
         // 检查角色是否存在
         AbstractCharacter srcCharacter = Optional.ofNullable(characters.get(src))
@@ -311,7 +219,69 @@ public class Game {
                 // do nothing
                 break;
         }
+    }
 
+    private void checkLogType(CombatLog log) throws GameException {
+        LogType type = LogType.valueOf(log.type);
+        // 检查日志类型
+        switch (state) {
+            case MOVE:
+                if (type == LogType.CAST) {
+                    state = GameState.CAST;
+                } else if (type != LogType.MOVE) {
+                    throw new GameException("日志类型非法");
+                }
+                break;
+            case CAST:
+                if (type != LogType.CAST) {
+                    throw new GameException("日志类型非法");
+                }
+                break;
+            default:
+                // do nothing
+                break;
+        }
+    }
+
+    private void move(AbstractCharacter src, AbstractCharacterData srcData, int x, int y) throws GameException {
+        // 检查目标地点是否合法
+        if (x < 0 || y < 0 || x >= MAP_SIZE || y >= MAP_SIZE) {
+            throw new GameException("移动目标非法");
+        }
+        // 检查目标地点是否已经有角色
+        if (map.containsValue(x * MAP_SIZE + y)) {
+            throw new GameException("移动目标已有角色");
+        }
+        int mobility = srcData.getMobility();
+        // 检查移动力
+        if (src.distance(x, y) > mobility) {
+            throw new GameException("移动力不足");
+        }
+        src.moveTo(x, y);
+        state = GameState.CAST;
+    }
+
+    private void cast(AbstractCharacter src, AbstractCharacterData srcData, AbstractCharacter dest,
+            AbstractCharacterData destData, AbstractSkillData skill) throws GameException {
+        // 检查该角色是否能释放该技能
+        if (!Arrays.stream(srcData.getSkillList()).anyMatch(a -> a == skill.getId())) {
+            throw new GameException("技能不可用");
+        }
+        // 检查技能目标是否合法
+        if ((src.isHarm(dest) && !skill.isHarm()) || (!src.isHarm(dest) && skill.isHarm())) {
+            throw new GameException("技能目标非法");
+        }
+        // 检查是否进入射程
+        if (src.distance(dest) > skill.getRange()) {
+            throw new GameException("技能超出射程");
+        }
+        delegate.ifPresent(d -> d.gameDidActSucceed(CombatLog.cast(src.getId(), dest.getId(), skill.getId())));
+        int damage = calcDamage(skill, destData);
+        dest.hurt(damage);
+        if (state == GameState.CAST) {
+            currentCamp = currentCamp == A ? B : A;
+            state = GameState.MOVE;
+        }
     }
 
     private void removeCharacter(int id) {
@@ -333,8 +303,7 @@ public class Game {
                 delegate.ifPresent(d -> d.gameDidEnd(lose, win));
             }
             state = GameState.END;
-            map.clear();
-            characters.clear();
+
         }
     }
 }
