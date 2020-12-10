@@ -8,13 +8,11 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.logging.Logger;
 
 /**
  * 用于处理监听事件的对象
  */
 public class ServerAcceptHandler implements CompletionHandler<AsynchronousSocketChannel, Void> {
-    private Logger logger = Logger.getLogger("hulubattle.server.AcceptHandler");
     private AsynchronousServerSocketChannel server;
     private Set<AsynchronousSocketChannel> channels = new HashSet<>();
     private ExecutorService battleServicePool;
@@ -41,12 +39,11 @@ public class ServerAcceptHandler implements CompletionHandler<AsynchronousSocket
                 BattleTask handler = new BattleTask(a, b);
                 battleServicePool.submit(handler);
             } catch (Exception e) {
-                logger.info("Create battle handler failed");
                 try {
                     a.close();
                     b.close();
                 } catch (IOException f) {
-                    logger.info("Close channels failed");
+                    // do nothing
                 }
             }
             channels.clear();
@@ -56,6 +53,6 @@ public class ServerAcceptHandler implements CompletionHandler<AsynchronousSocket
 
     @Override
     public void failed(Throwable exc, Void attachment) {
-        logger.info("Accept failed");
+        // do nothing
     }
 }

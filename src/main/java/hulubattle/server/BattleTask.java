@@ -4,11 +4,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
 import java.util.concurrent.Future;
-
-import com.google.gson.Gson;
 
 import hulubattle.game.model.CombatLog;
 import hulubattle.game.model.Game;
@@ -19,7 +15,6 @@ import hulubattle.game.model.GameDelegate;
  */
 public class BattleTask implements Runnable, GameDelegate {
     public static final int BUFFER_SIZE = 1024;
-    public static Gson gson = new Gson();
 
     private AsynchronousSocketChannel socketA;
     private AsynchronousSocketChannel socketB;
@@ -74,42 +69,20 @@ public class BattleTask implements Runnable, GameDelegate {
     }
 
     @Override
-    public void gameDidActFail(CombatLog error) {
-        send(error);
+    public void sendLog(CombatLog log) {
+        send(log, log);
     }
 
     @Override
-    public void gameDidActSucceed(CombatLog log) {
-        send(log);
-    }
-
-    @Override
-    public void gameDidEnd(CombatLog msgA, CombatLog msgB) {
-        send(msgA, msgB);
-        flag = false;
-    }
-
-    @Override
-    public void gameDidSetUp(List<CombatLog> setup) {
-        setup.forEach(this::send);
-    }
-
-    @Override
-    public void gameDidStart(CombatLog msgA, CombatLog msgB) {
+    public void sendLog(CombatLog msgA, CombatLog msgB) {
         send(msgA, msgB);
     }
 
     private void send(CombatLog logA, CombatLog logB) {
-        byte[] a = gson.toJson(logA).getBytes(StandardCharsets.UTF_8);
-        byte[] b = gson.toJson(logB).getBytes(StandardCharsets.UTF_8);
+        byte[] a = WriteHelper.format(logA);
+        byte[] b = WriteHelper.format(logB);
         send(a, bufferA, socketA);
         send(b, bufferB, socketB);
-    }
-
-    private void send(CombatLog log) {
-        byte[] bytes = gson.toJson(log).getBytes(StandardCharsets.UTF_8);
-        send(bytes, bufferA, socketA);
-        send(bytes, bufferB, socketB);
     }
 
     private void send(byte[] bytes, ByteBuffer buffer, AsynchronousSocketChannel socket) {
@@ -121,6 +94,7 @@ public class BattleTask implements Runnable, GameDelegate {
         try {
             i.get();
         } catch (InterruptedException e) {
+            e.printStackTrace();
             Thread.currentThread().interrupt();
         } catch (Exception e) {
             e.printStackTrace();

@@ -5,7 +5,10 @@ import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Optional;
+
+import com.google.gson.Gson;
 
 import hulubattle.game.model.CombatLog;
 import hulubattle.game.model.LogConsumer;
@@ -14,7 +17,8 @@ import hulubattle.game.model.LogConsumer;
  * 用于处理异步读事件，将读到的字节解码为字符串后转换为 CombatLog 对象交由 Consumer 进一步处理，可以用在 server 端或是
  * client 端
  */
-class ReadHandler implements CompletionHandler<Integer, Void> {
+public class ReadHandler implements CompletionHandler<Integer, Void> {
+    private static Gson gson = new Gson();
     private AsynchronousSocketChannel socket;
     private ByteBuffer buffer;
     private Optional<LogConsumer> consumer = Optional.empty();
@@ -55,8 +59,12 @@ class ReadHandler implements CompletionHandler<Integer, Void> {
         buffer.get(contexts, 0, result);
         buffer.clear();
         String str = new String(contexts, 0, result, StandardCharsets.UTF_8);
-        CombatLog log = BattleTask.gson.fromJson(str, CombatLog.class);
-        consumer.ifPresent(c -> c.consume(log));
+        Arrays.asList(str.split(WriteHelper.DELIM)).forEach(s -> {
+            if (s.length() > 0) {
+                CombatLog log = gson.fromJson(s, CombatLog.class);
+                consumer.ifPresent(c -> c.consume(log));
+            }
+        });
         socket.read(buffer, null, this);
     }
 

@@ -93,10 +93,13 @@ public final class CombatLog {
     /**
      * 获取 SKIP 类型的日志，跳过当前回合
      *
+     * @param camp 发送者的阵营
      * @return 日志对象
      */
-    public static CombatLog skip() {
-        return new CombatLog(LogType.SKIP.name(), "");
+    public static CombatLog skip(int camp) {
+        CombatLog log = new CombatLog(LogType.SKIP.name(), "");
+        log.payload.put("camp", camp);
+        return log;
     }
 
     /**

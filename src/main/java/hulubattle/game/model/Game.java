@@ -6,7 +6,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -66,10 +65,10 @@ public class Game implements LogConsumer {
 
     private CharacterMoveHandler moveHandler = (src, x, y) -> {
         map.forcePut(src, x * MAP_SIZE + y);
-        delegate.ifPresent(d -> d.gameDidActSucceed(CombatLog.move(src, x, y)));
+        delegate.ifPresent(d -> d.sendLog(CombatLog.move(src, x, y)));
     };
     private CharacterHurtHandler hurtHandler = (src, hp) -> {
-        delegate.ifPresent(d -> d.gameDidActSucceed(CombatLog.hurt(src, hp)));
+        delegate.ifPresent(d -> d.sendLog(CombatLog.hurt(src, hp)));
         if (hp == 0) {
             removeCharacter(src);
         }
@@ -130,8 +129,7 @@ public class Game implements LogConsumer {
         campBNum = 0;
         currentCamp = A;
 
-        List<CombatLog> logList = new ArrayList<>();
-
+        delegate.ifPresent(d -> d.sendLog(CombatLog.info("A"), CombatLog.info("B")));
         IntStream.range(0, initData.size()).forEach(i -> {
             Map<String, Integer> config = initData.get(i);
 
@@ -153,11 +151,8 @@ public class Game implements LogConsumer {
             } else {
                 campBNum += 1;
             }
-
-            logList.add(CombatLog.set(i, data.getId(), x, y, camp));
+            delegate.ifPresent(d -> d.sendLog(CombatLog.set(i, data.getId(), x, y, camp)));
         });
-        delegate.ifPresent(d -> d.gameDidStart(CombatLog.info("A"), CombatLog.info("B")));
-        delegate.ifPresent(d -> d.gameDidSetUp(logList));
         state = GameState.MOVE;
 
     }
@@ -173,15 +168,19 @@ public class Game implements LogConsumer {
         }
         LogType type = LogType.valueOf(log.type);
         if (type == LogType.SKIP) {
-            currentCamp = currentCamp == A ? B : A;
-            state = GameState.MOVE;
-            delegate.ifPresent(d -> d.gameDidActSucceed(CombatLog.skip()));
+            if (log.get("camp") == currentCamp) {
+                currentCamp = currentCamp == A ? B : A;
+                state = GameState.MOVE;
+                delegate.ifPresent(d -> d.sendLog(CombatLog.skip(log.get("camp"))));
+            } else {
+                delegate.ifPresent(d -> d.sendLog(CombatLog.error("日志参数非法")));
+            }
             return;
         }
         try {
             tryAct(log);
         } catch (GameException e) {
-            delegate.ifPresent(d -> d.gameDidActFail(CombatLog.error(e.getMessage())));
+            delegate.ifPresent(d -> d.sendLog(CombatLog.error(e.getMessage())));
         }
     }
 
@@ -280,7 +279,7 @@ public class Game implements LogConsumer {
         if (src.distance(dest) > skill.getRange()) {
             throw new GameException("技能超出射程");
         }
-        delegate.ifPresent(d -> d.gameDidActSucceed(CombatLog.cast(src.getId(), dest.getId(), skill.getId())));
+        delegate.ifPresent(d -> d.sendLog(CombatLog.cast(src.getId(), dest.getId(), skill.getId())));
         int damage = calcDamage(skill, destData);
         dest.hurt(damage);
         if (state == GameState.CAST) {
@@ -298,14 +297,14 @@ public class Game implements LogConsumer {
         }
         characters.remove(id);
         map.remove(id);
-        delegate.ifPresent(d -> d.gameDidActSucceed(CombatLog.destroy(id)));
+        delegate.ifPresent(d -> d.sendLog(CombatLog.destroy(id)));
         if (campANum == 0 || campBNum == 0) {
             CombatLog win = CombatLog.info("游戏胜利");
             CombatLog lose = CombatLog.info("游戏失败");
             if (campBNum == 0) {
-                delegate.ifPresent(d -> d.gameDidEnd(win, lose));
+                delegate.ifPresent(d -> d.sendLog(win, lose));
             } else {
-                delegate.ifPresent(d -> d.gameDidEnd(lose, win));
+                delegate.ifPresent(d -> d.sendLog(lose, win));
             }
             state = GameState.END;
 

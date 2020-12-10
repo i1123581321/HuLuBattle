@@ -2,6 +2,7 @@ package hulubattle.server;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.StandardSocketOptions;
 import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.util.concurrent.ExecutorService;
@@ -12,6 +13,7 @@ import java.util.concurrent.TimeUnit;
  * server，维护一个 socket channel 和一个用于对战的线程池
  */
 public class GameServer implements AutoCloseable {
+    public static final InetSocketAddress SERVER_ADDR = new InetSocketAddress("127.0.0.1", 10080);
     private ExecutorService groupThreadPool = Executors.newCachedThreadPool();
     private ExecutorService battleServicePool = Executors.newCachedThreadPool();
     private AsynchronousChannelGroup group;
@@ -24,7 +26,8 @@ public class GameServer implements AutoCloseable {
     public GameServer() throws IOException {
         group = AsynchronousChannelGroup.withThreadPool(groupThreadPool);
         serverSocket = AsynchronousServerSocketChannel.open(group);
-        serverSocket.bind(new InetSocketAddress("127.0.0.1", 10080));
+        serverSocket.setOption(StandardSocketOptions.SO_REUSEADDR, true);
+        serverSocket.bind(SERVER_ADDR);
     }
 
     /**

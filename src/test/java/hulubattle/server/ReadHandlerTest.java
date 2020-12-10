@@ -18,7 +18,6 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import hulubattle.game.model.CombatLog;
-import hulubattle.game.model.Game;
 import hulubattle.game.model.LogConsumer;
 
 public class ReadHandlerTest {
