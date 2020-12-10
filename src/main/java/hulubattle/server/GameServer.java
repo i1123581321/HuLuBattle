@@ -21,7 +21,7 @@ public class GameServer implements AutoCloseable {
     }
 
     public void accept() {
-        serverSocket.accept(null, new AcceptHandler(serverSocket, battleServicePool));
+        serverSocket.accept(null, new ServerAcceptHandler(serverSocket, battleServicePool));
     }
 
     @Override

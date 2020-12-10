@@ -10,13 +10,13 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.logging.Logger;
 
-public class AcceptHandler implements CompletionHandler<AsynchronousSocketChannel, Void> {
+public class ServerAcceptHandler implements CompletionHandler<AsynchronousSocketChannel, Void> {
     private Logger logger = Logger.getLogger("hulubattle.server.AcceptHandler");
     private AsynchronousServerSocketChannel server;
     private Set<AsynchronousSocketChannel> channels = new HashSet<>();
     private ExecutorService battleServicePool;
 
-    public AcceptHandler(AsynchronousServerSocketChannel server, ExecutorService battleServicePool) {
+    public ServerAcceptHandler(AsynchronousServerSocketChannel server, ExecutorService battleServicePool) {
         this.server = server;
         this.battleServicePool = battleServicePool;
     }
@@ -29,7 +29,7 @@ public class AcceptHandler implements CompletionHandler<AsynchronousSocketChanne
             AsynchronousSocketChannel a = it.next();
             AsynchronousSocketChannel b = it.next();
             try {
-                BattleHandler handler = new BattleHandler(a, b);
+                BattleTask handler = new BattleTask(a, b);
                 battleServicePool.submit(handler);
             } catch (Exception e) {
                 logger.info("Create battle handler failed");

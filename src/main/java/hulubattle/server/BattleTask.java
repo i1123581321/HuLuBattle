@@ -14,7 +14,7 @@ import hulubattle.game.model.CombatLog;
 import hulubattle.game.model.Game;
 import hulubattle.game.model.GameDelegate;
 
-public class BattleHandler implements Runnable, GameDelegate {
+public class BattleTask implements Runnable, GameDelegate {
     public static final int BUFFER_SIZE = 1024;
     public static Gson gson = new Gson();
 
@@ -26,7 +26,7 @@ public class BattleHandler implements Runnable, GameDelegate {
     private Game game;
     private boolean flag = true;
 
-    public BattleHandler(AsynchronousSocketChannel a, AsynchronousSocketChannel b)
+    public BattleTask(AsynchronousSocketChannel a, AsynchronousSocketChannel b)
             throws URISyntaxException, IOException {
         socketA = a;
         socketB = b;
@@ -38,17 +38,21 @@ public class BattleHandler implements Runnable, GameDelegate {
     public void run() {
         game.setUp();
         ByteBuffer a = ByteBuffer.allocate(BUFFER_SIZE);
-        socketA.read(a, null, new ReadHandler(socketA, a, game));
+        socketA.read(a, null, new ServerReadHandler(socketA, a, game));
         ByteBuffer b = ByteBuffer.allocate(BUFFER_SIZE);
-        socketB.read(b, null, new ReadHandler(socketB, b, game));
+        socketB.read(b, null, new ServerReadHandler(socketB, b, game));
 
-        while (flag && !Thread.currentThread().isInterrupted()) {
+        while (flag && !Thread.currentThread().isInterrupted() && socketA.isOpen() && socketB.isOpen()) {
             // waiting
         }
 
         try {
-            socketA.close();
-            socketB.close();
+            if (socketA.isOpen()) {
+                socketA.close();
+            }
+            if (socketB.isOpen()) {
+                socketB.close();
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }

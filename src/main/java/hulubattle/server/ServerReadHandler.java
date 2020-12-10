@@ -9,12 +9,12 @@ import java.nio.charset.StandardCharsets;
 import hulubattle.game.model.CombatLog;
 import hulubattle.game.model.Game;
 
-class ReadHandler implements CompletionHandler<Integer, Void> {
+class ServerReadHandler implements CompletionHandler<Integer, Void> {
     private AsynchronousSocketChannel socket;
     private ByteBuffer buffer;
     private Game game;
 
-    public ReadHandler(AsynchronousSocketChannel socket, ByteBuffer buffer, Game game) {
+    public ServerReadHandler(AsynchronousSocketChannel socket, ByteBuffer buffer, Game game) {
         this.socket = socket;
         this.buffer = buffer;
         this.game = game;
@@ -32,11 +32,11 @@ class ReadHandler implements CompletionHandler<Integer, Void> {
         }
 
         buffer.flip();
-        byte[] contexts = new byte[BattleHandler.BUFFER_SIZE];
+        byte[] contexts = new byte[BattleTask.BUFFER_SIZE];
         buffer.get(contexts, 0, result);
         buffer.clear();
-        String str = new String(contexts, StandardCharsets.UTF_8);
-        CombatLog log = BattleHandler.gson.fromJson(str, CombatLog.class);
+        String str = new String(contexts, 0, result, StandardCharsets.UTF_8);
+        CombatLog log = BattleTask.gson.fromJson(str, CombatLog.class);
         game.act(log);
         socket.read(buffer, null, this);
     }
