@@ -8,9 +8,17 @@ import hulubattle.game.model.LogConsumer;
 import hulubattle.server.BattleTask;
 import hulubattle.server.ReadHandler;
 
+/**
+ * 用于处理客户端的连接，连接完成后为其注册 read 事件的 handler
+ */
 public class ClientConnectHandler implements CompletionHandler<Void, AsynchronousSocketChannel> {
     private LogConsumer consumer;
 
+    /**
+     * 构造器
+     *
+     * @param consumer 处理读取到的 log 的对象
+     */
     public ClientConnectHandler(LogConsumer consumer) {
         this.consumer = consumer;
     }

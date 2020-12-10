@@ -21,6 +21,7 @@ public class GameServer implements AutoCloseable {
 
     /**
      * 初始化 socket
+     *
      * @throws IOException IO 错
      */
     public GameServer() throws IOException {
