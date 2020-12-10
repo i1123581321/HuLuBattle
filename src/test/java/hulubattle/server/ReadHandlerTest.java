@@ -19,26 +19,28 @@ import org.mockito.MockitoAnnotations;
 
 import hulubattle.game.model.CombatLog;
 import hulubattle.game.model.Game;
+import hulubattle.game.model.LogConsumer;
 
 public class ReadHandlerTest {
 
     private AutoCloseable closeable;
 
     @Mock
-    private Game game;
+    private LogConsumer consumer;
 
     @Mock
     private AsynchronousSocketChannel socket;
 
     private ByteBuffer buffer;
-    private ServerReadHandler handler;
+    private ReadHandler handler;
     private static Gson gson = new Gson();
 
     @Before
     public void setup() {
         closeable = MockitoAnnotations.openMocks(this);
         buffer = ByteBuffer.allocate(BattleTask.BUFFER_SIZE);
-        handler = new ServerReadHandler(socket, buffer, game);
+        handler = new ReadHandler(socket, buffer);
+        handler.setConsumer(consumer);
     }
 
     @Test
@@ -46,7 +48,7 @@ public class ReadHandlerTest {
         byte[] bytes = gson.toJson(CombatLog.move(0, 1, 1)).getBytes(StandardCharsets.UTF_8);
         buffer.put(bytes);
         handler.completed(bytes.length, null);
-        verify(game, times(1)).act(CombatLog.move(0, 1, 1));
+        verify(consumer, times(1)).consume(CombatLog.move(0, 1, 1));
         verify(socket, times(1)).read(buffer, null, handler);
     }
 

@@ -5,19 +5,38 @@ import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
 import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 
 import hulubattle.game.model.CombatLog;
-import hulubattle.game.model.Game;
+import hulubattle.game.model.LogConsumer;
 
-class ServerReadHandler implements CompletionHandler<Integer, Void> {
+/**
+ * 用于处理异步读事件，将读到的字节解码为字符串后转换为 CombatLog 对象交由 Consumer 进一步处理，可以用在 server 端或是
+ * client 端
+ */
+class ReadHandler implements CompletionHandler<Integer, Void> {
     private AsynchronousSocketChannel socket;
     private ByteBuffer buffer;
-    private Game game;
+    private Optional<LogConsumer> consumer = Optional.empty();
 
-    public ServerReadHandler(AsynchronousSocketChannel socket, ByteBuffer buffer, Game game) {
+    /**
+     * 构造器
+     *
+     * @param socket channel
+     * @param buffer 调用 read 时传入的 buffer
+     */
+    public ReadHandler(AsynchronousSocketChannel socket, ByteBuffer buffer) {
         this.socket = socket;
         this.buffer = buffer;
-        this.game = game;
+    }
+
+    /**
+     * 设置 consumer 对象
+     *
+     * @param consumer consumer
+     */
+    public void setConsumer(LogConsumer consumer) {
+        this.consumer = Optional.ofNullable(consumer);
     }
 
     @Override
@@ -37,7 +56,7 @@ class ServerReadHandler implements CompletionHandler<Integer, Void> {
         buffer.clear();
         String str = new String(contexts, 0, result, StandardCharsets.UTF_8);
         CombatLog log = BattleTask.gson.fromJson(str, CombatLog.class);
-        game.act(log);
+        consumer.ifPresent(c -> c.consume(log));
         socket.read(buffer, null, this);
     }
 

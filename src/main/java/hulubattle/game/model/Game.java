@@ -31,7 +31,7 @@ import hulubattle.game.model.AbstractCharacter.CharacterMoveHandler;
 /**
  * 代表游戏逻辑的类
  */
-public class Game {
+public class Game implements LogConsumer {
     public static final int MAP_SIZE = 10;
     public static final int SKILL_NUM = 4;
     public static final int CHARACTER_NUM = 4;
@@ -310,5 +310,10 @@ public class Game {
             state = GameState.END;
 
         }
+    }
+
+    @Override
+    public void consume(CombatLog log) {
+        act(log);
     }
 }

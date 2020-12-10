@@ -10,12 +10,21 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.logging.Logger;
 
+/**
+ * 用于处理监听事件的对象
+ */
 public class ServerAcceptHandler implements CompletionHandler<AsynchronousSocketChannel, Void> {
     private Logger logger = Logger.getLogger("hulubattle.server.AcceptHandler");
     private AsynchronousServerSocketChannel server;
     private Set<AsynchronousSocketChannel> channels = new HashSet<>();
     private ExecutorService battleServicePool;
 
+    /**
+     * 构造函数
+     *
+     * @param server            server socket
+     * @param battleServicePool 对战用线程池
+     */
     public ServerAcceptHandler(AsynchronousServerSocketChannel server, ExecutorService battleServicePool) {
         this.server = server;
         this.battleServicePool = battleServicePool;
