@@ -1,16 +1,17 @@
 package hulubattle.game.data;
 
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.lang.reflect.Type;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.google.common.io.CharStreams;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -37,12 +38,12 @@ public class JsonDataSupplier<T extends Data> implements DataSupplier<T> {
      * 文件构造器，使用一个路径作为数据源
      *
      * @param typeClass 具体存储的类型的 Class 对象，继承自 T
-     * @param path      JSON 文件所在的路径
+     * @param url       JSON 文件所在的路径
      * @throws IOException 读文件错时抛出
      */
-    public JsonDataSupplier(Class<? extends T> typeClass, Path path) throws IOException {
+    public JsonDataSupplier(Class<? extends T> typeClass, URL url) throws IOException {
         this.typeClass = typeClass;
-        setDataSource(path);
+        setDataSource(url);
     }
 
     private void setDataSource(String string) {
@@ -52,8 +53,8 @@ public class JsonDataSupplier<T extends Data> implements DataSupplier<T> {
         list.forEach(t -> map.put(t.getId(), t));
     }
 
-    private void setDataSource(Path path) throws IOException {
-        String string = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
+    private void setDataSource(URL url) throws IOException {
+        String string = CharStreams.toString(new InputStreamReader(url.openStream(), StandardCharsets.UTF_8));
         setDataSource(string);
     }
 

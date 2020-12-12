@@ -1,11 +1,10 @@
 package hulubattle.game.model;
 
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -15,6 +14,7 @@ import java.util.stream.IntStream;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
+import com.google.common.io.CharStreams;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -96,12 +96,12 @@ public class Game implements LogConsumer {
      * @throws IOException        读取文件错误
      */
     public Game() throws URISyntaxException, IOException {
-        Path characterPath = Paths.get(getClass().getClassLoader().getResource("config/characters.json").toURI());
-        Path skillPath = Paths.get(getClass().getClassLoader().getResource("config/skills.json").toURI());
-        Path initPath = Paths.get(getClass().getClassLoader().getResource("config/init.json").toURI());
-        charactersData = new JsonDataSupplier<>(SimpleCharacterData.class, characterPath);
-        skillsData = new JsonDataSupplier<>(SimpleSkillData.class, skillPath);
-        initData = gson.fromJson(new String(Files.readAllBytes(initPath), StandardCharsets.UTF_8),
+        URL characterURL = getClass().getClassLoader().getResource("config/characters.json");
+        URL skillURL = getClass().getClassLoader().getResource("config/skills.json");
+        URL initURL = getClass().getClassLoader().getResource("config/init.json");
+        charactersData = new JsonDataSupplier<>(SimpleCharacterData.class, characterURL);
+        skillsData = new JsonDataSupplier<>(SimpleSkillData.class, skillURL);
+        initData = gson.fromJson(CharStreams.toString(new InputStreamReader(initURL.openStream(), StandardCharsets.UTF_8)),
                 new TypeToken<List<Map<String, Integer>>>() {
                 }.getType());
     }

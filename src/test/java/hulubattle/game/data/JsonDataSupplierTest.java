@@ -7,8 +7,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.net.URL;
 
 import org.junit.Test;
 
@@ -33,13 +32,13 @@ public class JsonDataSupplierTest {
 
     @Test(expected = Test.None.class)
     public void testLoadFromFileNotThrows() throws IOException, URISyntaxException {
-        Path characterPath = Paths.get(getClass().getClassLoader().getResource("config/characters.json").toURI());
-        characterDataSupplier = new JsonDataSupplier<>(SimpleCharacterData.class, characterPath);
+        URL characterURL = getClass().getClassLoader().getResource("config/characters.json");
+        characterDataSupplier = new JsonDataSupplier<>(SimpleCharacterData.class, characterURL);
     }
 
-    @Test(expected = IOException.class)
+    @Test(expected = Exception.class)
     public void testLoadFromFileThrows() throws IOException {
         characterDataSupplier = new JsonDataSupplier<>(SimpleCharacterData.class,
-                Paths.get("/not_exist_characters.json"));
+                getClass().getClassLoader().getResource("config/not_exists.json"));
     }
 }
