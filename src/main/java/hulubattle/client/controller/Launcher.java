@@ -13,10 +13,11 @@ public class Launcher extends Application {
     public void start(Stage primaryStage) throws Exception {
         URL url = getClass().getClassLoader().getResource("layout/main.fxml");
         FXMLLoader loader = new FXMLLoader(url);
-        loader.setController(new MainViewController());
+        loader.setController(new MainViewController(primaryStage));
         Parent root = loader.load();
         Scene scene = new Scene(root);
         primaryStage.setScene(scene);
+        primaryStage.setTitle("HuLu Battle");
         primaryStage.show();
     }
     public static void main(String[] args) {

@@ -1,6 +1,7 @@
 package hulubattle.client.view;
 
 import hulubattle.client.controller.MainViewController;
+import hulubattle.game.data.AbstractCharacterData;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Pos;
@@ -19,11 +20,15 @@ public class CharacterGrid {
     private int id;
     private int dataId;
     private int camp;
+    private int maxHp;
+    private int x = 0;
+    private int y = 0;
 
-    public CharacterGrid(int id, int dataId, int camp) {
+    public CharacterGrid(int id, AbstractCharacterData data, int camp) {
         this.id = id;
-        this.dataId = dataId;
         this.camp = camp;
+        this.dataId = data.getId();
+        this.maxHp = data.getHp();
 
         box.setMaxSize(MainViewController.GRID_WIDTH, MainViewController.GRID_HEIGHT);
         box.setMinSize(MainViewController.GRID_WIDTH, MainViewController.GRID_HEIGHT);
@@ -46,17 +51,19 @@ public class CharacterGrid {
         hpBar.setMinSize(MainViewController.GRID_WIDTH - 15.0, 10.0);
         hpBar.setMaxSize(MainViewController.GRID_WIDTH - 15.0, 10.0);
         hpBar.setStyle("-fx-accent: green;");
-        
+
         box.getChildren().addAll(button, hpBar);
     }
 
     public void move(int x, int y) {
+        this.x = x;
+        this.y = y;
         AnchorPane.setLeftAnchor(box, x * MainViewController.GRID_WIDTH);
         AnchorPane.setTopAnchor(box, y * MainViewController.GRID_HEIGHT);
     }
 
-    public void setHp(double percentage) {
-        hpBar.setProgress(percentage);
+    public void setHp(int hp) {
+        hpBar.setProgress((double) hp / maxHp);
     }
 
     public void appendTo(AnchorPane pane) {
@@ -86,6 +93,20 @@ public class CharacterGrid {
      */
     public int getCamp() {
         return camp;
+    }
+
+    /**
+     * @return the x
+     */
+    public int getX() {
+        return x;
+    }
+
+    /**
+     * @return the y
+     */
+    public int getY() {
+        return y;
     }
 
     /**

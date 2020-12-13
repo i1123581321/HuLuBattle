@@ -54,7 +54,8 @@ public class JsonDataSupplier<T extends Data> implements DataSupplier<T> {
     }
 
     private void setDataSource(URL url) throws IOException {
-        String string = CharStreams.toString(new InputStreamReader(url.openStream(), StandardCharsets.UTF_8));
+        URL u = Optional.ofNullable(url).orElseThrow(() -> new IOException("URL not exist"));
+        String string = CharStreams.toString(new InputStreamReader(u.openStream(), StandardCharsets.UTF_8));
         setDataSource(string);
     }
 

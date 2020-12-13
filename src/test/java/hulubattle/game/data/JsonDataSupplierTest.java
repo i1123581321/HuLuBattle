@@ -36,7 +36,7 @@ public class JsonDataSupplierTest {
         characterDataSupplier = new JsonDataSupplier<>(SimpleCharacterData.class, characterURL);
     }
 
-    @Test(expected = Exception.class)
+    @Test(expected = IOException.class)
     public void testLoadFromFileThrows() throws IOException {
         characterDataSupplier = new JsonDataSupplier<>(SimpleCharacterData.class,
                 getClass().getClassLoader().getResource("config/not_exists.json"));
