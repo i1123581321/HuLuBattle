@@ -13,7 +13,7 @@
 
 <VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="720.0" minWidth="800.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
    <children>
-      <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS">
+      <ScrollPane fx:id="logPane" fitToWidth="true" VBox.vgrow="ALWAYS">
          <content>
             <Label fx:id="logLabel" textAlignment="JUSTIFY" wrapText="true">
                <padding>
@@ -41,10 +41,10 @@
                       <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
                     </rowConstraints>
                      <children>
-                        <Button fx:id="openServerBtn" focusTraversable="false" mnemonicParsing="false" text="以服务器启动" />
-                        <Button fx:id="closeServerBtn" focusTraversable="false" mnemonicParsing="false" text="关闭" GridPane.columnIndex="1" />
-                        <Button fx:id="openClientBtn" focusTraversable="false" mnemonicParsing="false" text="以客户端启动" GridPane.rowIndex="1" />
-                        <Button fx:id="closeClientBtn" focusTraversable="false" mnemonicParsing="false" text="关闭" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                        <Button fx:id="openServerBtn" focusTraversable="false" mnemonicParsing="false" onAction="#openServerBtnHandler" text="以服务器启动" />
+                        <Button fx:id="closeServerBtn" focusTraversable="false" mnemonicParsing="false" onAction="#closeServerBtnHandler" text="关闭" GridPane.columnIndex="1" />
+                        <Button fx:id="openClientBtn" focusTraversable="false" mnemonicParsing="false" onAction="#openClientBtnHandler" text="以客户端启动" GridPane.rowIndex="1" />
+                        <Button fx:id="closeClientBtn" focusTraversable="false" mnemonicParsing="false" onAction="#closeClientBtnHandler" text="关闭" GridPane.columnIndex="1" GridPane.rowIndex="1" />
                         <Button fx:id="loadLogBtn" focusTraversable="false" mnemonicParsing="false" onAction="#loadLogBtnHandler" text="加载日志文件" GridPane.rowIndex="2" />
                         <Button fx:id="saveLogBtn" focusTraversable="false" mnemonicParsing="false" onAction="#saveLogBtnHandler" text="保存" GridPane.columnIndex="1" GridPane.rowIndex="2" />
                      </children>

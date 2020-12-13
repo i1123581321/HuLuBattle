@@ -6,7 +6,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -38,11 +37,15 @@ import hulubattle.game.model.LogType;
 import hulubattle.server.GameServer;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.Group;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Tooltip;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Paint;
@@ -53,6 +56,9 @@ import javafx.stage.Stage;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.util.Duration;
 
+/**
+ * 控制游戏 UI 的逻辑
+ */
 public class MainViewController implements LogConsumer {
     public static final double GRID_WIDTH = 60.0;
     public static final double GRID_HEIGHT = 60.0;
@@ -78,6 +84,8 @@ public class MainViewController implements LogConsumer {
     private VBox controlBox;
 
     @FXML
+    private ScrollPane logPane;
+    @FXML
     private Label logLabel;
 
     @FXML
@@ -93,17 +101,25 @@ public class MainViewController implements LogConsumer {
     private Map<Integer, CharacterGrid> cMap = new HashMap<>();
     private Map<String, String> nMap = ImmutableMap.<String, String>builder().put("00", "三娃").put("01", "二娃")
             .put("02", "四娃").put("03", "五娃").put("10", "蟾蜍精").put("11", "蝎子精").put("12", "蜈蚣精").put("13", "蛇精").build();
+
     private List<CombatLog> logList = new ArrayList<>();
 
     private State state = State.INIT_1;
     private StringBuilder stringBuilder = new StringBuilder();
+    private int camp;
     private int source;
     private int target;
     private int x;
     private int y;
     private int skill;
 
-    public MainViewController(Stage mainStage) throws URISyntaxException, IOException {
+    /**
+     * 构造器
+     *
+     * @param mainStage 此 scene 所处的 stage
+     * @throws IOException 打开配置文件失败
+     */
+    public MainViewController(Stage mainStage) throws IOException {
         URL characterURL = getClass().getClassLoader().getResource("config/characters.json");
         URL skillURL = getClass().getClassLoader().getResource("config/skills.json");
         charactersData = new JsonDataSupplier<>(SimpleCharacterData.class, characterURL);
@@ -111,9 +127,10 @@ public class MainViewController implements LogConsumer {
         this.mainStage = mainStage;
     }
 
+    /**
+     * 进行一些程序的初始化工作
+     */
     public void initialize() {
-        logger.info("initialize called");
-
         IntStream.range(0, 11).forEach(i -> {
             Line hLine = new Line();
             hLine.setEndX(GRID_SIZE * GRID_WIDTH);
@@ -133,6 +150,8 @@ public class MainViewController implements LogConsumer {
                 updateState(State.MOVE_2);
             }
         });
+
+        logPane.vvalueProperty().bind(logLabel.heightProperty());
     }
 
     private void reset() {
@@ -254,6 +273,7 @@ public class MainViewController implements LogConsumer {
             case INFO:
                 if (log.msg.equals("A") || log.msg.equals("B")) {
                     builder.append(String.format("你的阵营是 %s", log.msg.equals("A") ? "葫芦娃" : "妖怪"));
+                    camp = log.msg.equals("A") ? 0 : 1;
                 } else {
                     builder.append(log.msg);
                 }
@@ -305,26 +325,29 @@ public class MainViewController implements LogConsumer {
 
     @Override
     public void consume(CombatLog log) {
-        updateLog(formatLog(log));
         logList.add(log);
-        LogType type = LogType.valueOf(log.type);
-        switch (type) {
-            case SET:
-                setupCharacter(log.get("src"), log.get("data"), log.get("x"), log.get("y"), log.get("camp"));
-                break;
-            case MOVE:
-                cMap.get(log.get("src")).move(log.get("x"), log.get("y"));
-                break;
-            case HURT:
-                cMap.get(log.get("src")).setHp(log.get("hp"));
-                break;
-            case DESTROY:
-                cMap.remove(log.get("src")).removeFrom(mapPane);
-                break;
-            default:
-                // do nothing
-                break;
-        }
+        Platform.runLater(() -> {
+            updateLog(formatLog(log));
+            LogType type = LogType.valueOf(log.type);
+            switch (type) {
+                case SET:
+                    setupCharacter(log.get("src"), log.get("data"), log.get("x"), log.get("y"), log.get("camp"));
+                    break;
+                case MOVE:
+                    cMap.get(log.get("src")).move(log.get("x"), log.get("y"));
+                    break;
+                case HURT:
+                    cMap.get(log.get("src")).setHp(log.get("hp"));
+                    break;
+                case DESTROY:
+                    cMap.remove(log.get("src")).removeFrom(mapPane);
+                    break;
+                default:
+                    // do nothing
+                    break;
+            }
+        });
+
     }
 
     @FXML
@@ -340,19 +363,25 @@ public class MainViewController implements LogConsumer {
 
     @FXML
     protected void submitBtnHandler() {
-        switch (state) {
-            case CAST_2:
-                client.ifPresent(c -> c.write(CombatLog.cast(source, target, skill)));
-                cancelBtn.fire();
-                break;
-            case MOVE_2:
-                client.ifPresent(c -> c.write(CombatLog.move(source, x, y)));
-                cancelBtn.fire();
-                break;
-            default:
-                stringBuilder.append("提交无效");
-        }
-        logLabel.setText(stringBuilder.toString());
+        Optional.ofNullable(cMap.get(source)).ifPresent(grid -> {
+            if (grid.getCamp() != camp) {
+                Alert alert = new Alert(AlertType.WARNING, "你只能操作自己的角色");
+                alert.show();
+                return;
+            }
+            switch (state) {
+                case CAST_2:
+                    client.ifPresent(c -> c.write(CombatLog.cast(source, target, skill)));
+                    cancelBtn.fire();
+                    break;
+                case MOVE_2:
+                    client.ifPresent(c -> c.write(CombatLog.move(source, x, y)));
+                    cancelBtn.fire();
+                    break;
+                default:
+                    // do nothing
+            }
+        });
     }
 
     @FXML
@@ -374,7 +403,7 @@ public class MainViewController implements LogConsumer {
                 line.setCycleCount(list.size());
                 line.play();
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.warning("Load log failed");
             }
         });
     }
@@ -389,8 +418,53 @@ public class MainViewController implements LogConsumer {
             try (BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(file))) {
                 out.write(gson.toJson(logList).getBytes(StandardCharsets.UTF_8));
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.warning("Write log failed");
             }
         });
+    }
+
+    @FXML
+    protected void openServerBtnHandler() {
+        try {
+            server = Optional.of(new GameServer());
+        } catch (IOException e) {
+            logger.warning("Create server failed");
+        }
+        server.ifPresent(GameServer::accept);
+    }
+
+    @FXML
+    protected void closeServerBtnHandler() {
+        server.ifPresent(t -> {
+            try {
+                t.close();
+            } catch (Exception e) {
+                logger.warning("Close Server Failed");
+            }
+        });
+        server = Optional.empty();
+    }
+
+    @FXML
+    protected void openClientBtnHandler() {
+        try {
+            client = Optional.of(new GameClient(this));
+        } catch (IOException e) {
+            logger.warning("Create client failed");
+        }
+        client.ifPresent(GameClient::connect);
+        reset();
+    }
+
+    @FXML
+    protected void closeClientBtnHandler() {
+        client.ifPresent(c -> {
+            try {
+                c.close();
+            } catch (Exception e) {
+                logger.warning("Close client failed");
+            }
+        });
+        client = Optional.empty();
     }
 }
