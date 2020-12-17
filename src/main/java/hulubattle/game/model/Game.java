@@ -157,12 +157,7 @@ public class Game implements LogConsumer {
 
     }
 
-    /**
-     * 根据传入的指示来行动或是返回错误信息
-     *
-     * @param log 代表行动的日志对象
-     */
-    public synchronized void act(CombatLog log) {
+    private synchronized void act(CombatLog log) {
         if (state == GameState.END) {
             return;
         }

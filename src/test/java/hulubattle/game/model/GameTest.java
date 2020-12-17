@@ -57,7 +57,7 @@ public class GameTest {
 
     @Test
     public void testWrongLogType() {
-        game.act(CombatLog.destroy(1));
+        game.consume(CombatLog.destroy(1));
         verify(delegate, times(5)).sendLog(captor.capture());
 
         assertEquals("ERROR", captor.getValue().type);
@@ -65,8 +65,8 @@ public class GameTest {
 
     @Test
     public void testIllegalSrc() {
-        game.act(CombatLog.move(4, 3, 5));
-        game.act(CombatLog.move(2, 6, 5));
+        game.consume(CombatLog.move(4, 3, 5));
+        game.consume(CombatLog.move(2, 6, 5));
         verify(delegate, times(6)).sendLog(captor.capture());
 
         assertEquals("ERROR", captor.getValue().type);
@@ -74,9 +74,9 @@ public class GameTest {
 
     @Test
     public void testIllegalMove() {
-        game.act(CombatLog.move(0, -1, 10));
-        game.act(CombatLog.move(0, 3, 6));
-        game.act(CombatLog.move(0, 3, 7));
+        game.consume(CombatLog.move(0, -1, 10));
+        game.consume(CombatLog.move(0, 3, 6));
+        game.consume(CombatLog.move(0, 3, 7));
 
         verify(delegate, times(7)).sendLog(captor.capture());
 
@@ -85,8 +85,8 @@ public class GameTest {
 
     @Test
     public void testIllegalDest() {
-        game.act(CombatLog.cast(0, 4, 0));
-        game.act(CombatLog.cast(0, 3, 3));
+        game.consume(CombatLog.cast(0, 4, 0));
+        game.consume(CombatLog.cast(0, 3, 3));
 
         verify(delegate, times(6)).sendLog(captor.capture());
 
@@ -95,9 +95,9 @@ public class GameTest {
 
     @Test
     public void testIllegalCast() {
-        game.act(CombatLog.cast(0, 3, 1));
-        game.act(CombatLog.cast(0, 1, 0));
-        game.act(CombatLog.cast(0, 2, 0));
+        game.consume(CombatLog.cast(0, 3, 1));
+        game.consume(CombatLog.cast(0, 1, 0));
+        game.consume(CombatLog.cast(0, 2, 0));
 
         verify(delegate, times(7)).sendLog(captor.capture());
 
@@ -106,7 +106,7 @@ public class GameTest {
 
     @Test
     public void testMove() {
-        game.act(CombatLog.move(0, 3, 3));
+        game.consume(CombatLog.move(0, 3, 3));
         verify(delegate, times(5)).sendLog(captor.capture());
 
         assertEquals(CombatLog.move(0, 3, 3), captor.getValue());
@@ -114,7 +114,7 @@ public class GameTest {
 
     @Test
     public void testCast() {
-        game.act(CombatLog.cast(0, 3, 0));
+        game.consume(CombatLog.cast(0, 3, 0));
         verify(delegate, times(6)).sendLog(captor.capture());
 
         assertEquals(CombatLog.hurt(3, 50), captor.getValue());
@@ -122,9 +122,9 @@ public class GameTest {
 
     @Test
     public void testDestroy() {
-        game.act(CombatLog.cast(0, 3, 0));
-        game.act(CombatLog.skip(1));
-        game.act(CombatLog.cast(0, 3, 0));
+        game.consume(CombatLog.cast(0, 3, 0));
+        game.consume(CombatLog.skip(1));
+        game.consume(CombatLog.cast(0, 3, 0));
 
         verify(delegate, times(10)).sendLog(captor.capture());
 
@@ -133,19 +133,19 @@ public class GameTest {
 
     @Test
     public void testEnd() {
-        game.act(CombatLog.cast(0, 3, 0));
-        game.act(CombatLog.skip(1));
-        game.act(CombatLog.cast(0, 3, 0));
-        game.act(CombatLog.skip(1));
-        game.act(CombatLog.move(1, 5, 4));
-        game.act(CombatLog.cast(1, 2, 1));
-        game.act(CombatLog.skip(1));
-        game.act(CombatLog.cast(1, 2, 1));
-        game.act(CombatLog.skip(1));
-        game.act(CombatLog.cast(1, 2, 1));
-        game.act(CombatLog.skip(1));
-        game.act(CombatLog.cast(1, 2, 1));
-        game.act(CombatLog.skip(1));
+        game.consume(CombatLog.cast(0, 3, 0));
+        game.consume(CombatLog.skip(1));
+        game.consume(CombatLog.cast(0, 3, 0));
+        game.consume(CombatLog.skip(1));
+        game.consume(CombatLog.move(1, 5, 4));
+        game.consume(CombatLog.cast(1, 2, 1));
+        game.consume(CombatLog.skip(1));
+        game.consume(CombatLog.cast(1, 2, 1));
+        game.consume(CombatLog.skip(1));
+        game.consume(CombatLog.cast(1, 2, 1));
+        game.consume(CombatLog.skip(1));
+        game.consume(CombatLog.cast(1, 2, 1));
+        game.consume(CombatLog.skip(1));
 
         verify(delegate, times(2)).sendLog(captor.capture(), any(CombatLog.class));
 

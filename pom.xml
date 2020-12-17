@@ -73,6 +73,12 @@
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
         <version>0.8.6</version>
+        <configuration>
+          <excludes>
+            <exclude>hulubattle/client/view/*</exclude>
+            <exclude>hulubattle/client/controller/*</exclude>
+          </excludes>
+        </configuration>
         <executions>
           <execution>
             <id>default-prepare-agent</id>

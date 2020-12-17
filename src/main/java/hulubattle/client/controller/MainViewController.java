@@ -385,6 +385,12 @@ public class MainViewController implements LogConsumer {
     }
 
     @FXML
+    protected void skipBtnHandler() {
+        client.ifPresent(c -> c.write(CombatLog.skip(camp)));
+        cancelBtn.fire();
+    }
+
+    @FXML
     protected void loadLogBtnHandler() {
         FileChooser fc = new FileChooser();
         fc.setTitle("选择日志文件");
