@@ -1,5 +1,3 @@
-package hulubattle;
-
 import hulubattle.client.controller.Launcher;
 
 public class Main {
